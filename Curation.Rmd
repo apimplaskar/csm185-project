@@ -1,0 +1,92 @@
+---
+title: "Compiling Data Set"
+output: html_notebook
+---
+
+Files from MIMIC III: 
+DATETIMEEVENTS
+DIAGNOSIS_ICD
+PROCEDURES_ICD
+CHARTEVENS
+PATIENTS 
+
+Files to decode:
+D_ICD_DIAGNOSIS
+D_ICD_PROCEDURES
+D_ITEMS
+
+Link all by HADM_ID/SUBJECT_ID
+```{r}
+datetimeevents <- read.csv("../Data/DATETIMEEVENTS.csv")
+diagnosis <- read.csv("../Data/DIAGNOSES_ICD.csv")
+procedures <- read.csv("../Data/PROCEDURES_ICD.csv")
+patients <- read.csv("../Data/PATIENTS.csv")
+# expire flag in patients -- 0 = alive, 1 = deceased
+# chart events
+
+diagnosis_codes <- read.csv("../Data/D_ICD_DIAGNOSES.csv")
+procedure_codes <- read.csv("../Data/D_ICD_PROCEDURES.csv")
+item_codes <- read.csv("../Data/D_ITEMS.csv")
+
+diagnosis_counts <- data.frame(sort(table(diagnosis$ICD9_CODE), decreasing = T))
+diagnosis_counts$diagnosis <- diagnosis_codes$LONG_TITLE[match(diagnosis_counts$Var1, diagnosis_codes$ICD9_CODE)]
+colnames(diagnosis_counts)[1] <- "diagnosis ICD code"
+```
+
+Determining which procedure/diagnosis to work with
+```{r}
+head(data)
+data <- datetimeevents
+data$diagnosis <- diagnosis$ICD9_CODE[match(data$SUBJECT_ID, diagnosis$SUBJECT_ID)]
+data$procedure <- procedures$ICD9_CODE[match(data$SUBJECT_ID, procedures$SUBJECT_ID)]
+data$deceased <- patients$EXPIRE_FLAG[match(data$SUBJECT_ID, patients$SUBJECT_ID)]
+# chart items
+
+hypertension_procedures <- data.frame(sort(table(data$procedure[data$diagnosis == "4019"]), decreasing = T))
+colnames(hypertension_procedures)[1] <- "Procedure ICD"
+hypertension_procedures$Procedure <- procedure_codes$LONG_TITLE[match(hypertension_procedures$`Procedure ICD`, procedure_codes$ICD9_CODE)]
+
+congHeartFailure_procedures <- data.frame(sort(table(data$procedure[data$diagnosis == "4280"]), decreasing = T))
+colnames(congHeartFailure_procedures)[1] <- "Procedure ICD"
+congHeartFailure_procedures$Procedure <- procedure_codes$LONG_TITLE[match(congHeartFailure_procedures$`Procedure ICD`, procedure_codes$ICD9_CODE)]
+
+AFib_procedures <- data.frame(sort(table(data$procedure[data$diagnosis == "42731"]), decreasing = T))
+colnames(AFib_procedures)[1] <- "Procedure ICD"
+AFib_procedures$Procedure <- procedure_codes$LONG_TITLE[match(AFib_procedures$`Procedure ICD`, procedure_codes$ICD9_CODE)]
+
+CorAthero_procedures <- data.frame(sort(table(data$procedure[data$diagnosis == "41401"]), decreasing = T))
+colnames(CorAthero_procedures)[1] <- "Procedure ICD"
+CorAthero_procedures$Procedure <- procedure_codes$LONG_TITLE[match(CorAthero_procedures$`Procedure ICD`, procedure_codes$ICD9_CODE)]
+```
+
+Checking number of unique cases that died
+```{r}
+CorAthero <- data.frame(data[data$diagnosis == "41401",])
+UniqueCorAtheroCases <- unique(CorAthero$SUBJECT_ID)
+CorAtheroPatients <- patients[match(UniqueCorAtheroCases, patients$SUBJECT_ID),] 
+sum(CorAtheroPatients$EXPIRE_FLAG == 1) #283 died
+```
+
+Matching admissions over subject_ID
+```{r}
+admissions <- read.csv("../Data/ADMISSIONS.csv")
+# Keeping: ADMITTIME, DEATHTIME, DISCHTIME, ETHNICITY, HOSPITAL_EXPIRE_FLAG, HAS_CHARTEVENTS_DATA
+# Cols: 4-6, 14, 18-19b
+data <- cbind(data, admissions[match(data$SUBJECT_ID, admissions$SUBJECT_ID), c(4:6, 14, 18:19)])
+head(data)
+write.csv(data, "../Data/Feb18-Data.csv")
+```
+
+Removing columns we don't want
+```{r}
+colnames(data)
+# Get rid of ICUSTAY_ID, STORETIME, CGID, WARNING, ERROR, RESULTSTATUS, STOPPED
+# Columns: 4, 7-8, 11-14
+data <- data[,c(1:3, 5:6, 9:10, 15:23)]
+```
+
+```{r}
+sessionInfo()
+save.image("Curation-Feb18-2020.Rdata")
+```
+
