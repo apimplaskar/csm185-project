@@ -6,7 +6,7 @@ Assessing mortality risk predictions based on hospital critical care data. We us
 ### Contributors: 
 Aditya Pimplaskar
 
-Kaushal Rao
+Kaushal Rao (testing push)
 
 Shaili Mathur
 
