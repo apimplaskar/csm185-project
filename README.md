@@ -4,13 +4,13 @@ This is a repository for CSM 185.
 Assessing mortality risk predictions based on hospital critical care data. We use random forest machine learning models and compare their efficacy using longitudinal and cross-sectional features.
 
 ### Contributors: 
-Aditya Pimplaskar (testing push)
+Aditya Pimplaskar
 
-Kaushal Rao (testing push and edit)
+Kaushal Rao
 
 Shaili Mathur
 
-Saahil Patel (testing push)
+Saahil Patel
 
 Angela Gu
 
